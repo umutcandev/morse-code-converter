@@ -140,10 +140,11 @@ export function Header() {
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-800 border-zinc-700">
                       <SelectItem value="0.25" className="text-zinc-300 hover:bg-zinc-700">0.25x (Çok Yavaş)</SelectItem>
-                      <SelectItem value="0.5" className="text-zinc-300 hover:bg-zinc-700">0.5x (Yavaş)</SelectItem>
+                      <SelectItem value="0.5" className="text-zinc-300 hover:bg-zinc-700">0.50x (Yavaş)</SelectItem>
+                      <SelectItem value="0.75" className="text-zinc-300 hover:bg-zinc-700">0.75x (Orta Yavaş)</SelectItem>
                       <SelectItem value="1" className="text-zinc-300 hover:bg-zinc-700">1x (Normal)</SelectItem>
                       <SelectItem value="1.25" className="text-zinc-300 hover:bg-zinc-700">1.25x (Hızlı)</SelectItem>
-                      <SelectItem value="1.5" className="text-zinc-300 hover:bg-zinc-700">1.5x (Çok Hızlı)</SelectItem>
+                      <SelectItem value="1.5" className="text-zinc-300 hover:bg-zinc-700">1.50x (Çok Hızlı)</SelectItem>
                       <SelectItem value="2" className="text-zinc-300 hover:bg-zinc-700">2x (Ultra Hızlı)</SelectItem>
                     </SelectContent>
                   </Select>

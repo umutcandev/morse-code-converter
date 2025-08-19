@@ -17,8 +17,8 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined)
 
 // Varsayılan değerler
 const DEFAULT_SETTINGS: AudioSettings = {
-  frequency: 600, // Varsayılan frekans (CW standart)
-  speed: 1        // Varsayılan hız
+  frequency: 600, // Varsayılan frekans (CW standart - 600Hz ideal)
+  speed: 0.75     // Varsayılan hız (yeni başlayanlar için yavaş tempo)
 }
 
 export function AudioProvider({ children }: { children: ReactNode }) {

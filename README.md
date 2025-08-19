@@ -11,7 +11,6 @@ Modern ve kullanıcı dostu bir Mors kodu çevirici uygulaması. Metin ile Mors 
 - **Responsive Tasarım**: Tüm cihazlarda mükemmel görünüm
 - **Modern Arayüz**: Karanlık tema ve yumuşak animasyonlar
 - **Hızlı ve Kolay**: Tek tıkla çeviri ve kopyalama
-- **Gerçek Zamanlı**: Yazarken anlık çeviri
 - **Panoya Kopyalama**: Çeviri sonucunu tek tıkla kopyalama
 - **Özelleştirilebilir Ses**: Ayarlanabilir ton ve hız
 

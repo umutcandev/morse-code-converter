@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { useAudio } from "@/contexts/AudioContext"
 import { motion, AnimatePresence } from "framer-motion"
-import { Label } from "@/components/ui/label"
+
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -171,15 +171,19 @@ export default function MorseCodeConverter() {
       oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime)
       oscillator.type = "sine"
 
+      // Daha yumuşak başlangıç ve bitiş için fade in/out süresini artır
+      const fadeTime = Math.min(0.01, duration * 0.1) // Duration'ın %10'u ama max 10ms
+      
       gainNode.gain.setValueAtTime(0, audioContext.currentTime)
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.005)
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + duration - 0.005)
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + fadeTime)
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + duration - fadeTime)
       gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration)
 
       oscillator.start(audioContext.currentTime)
       oscillator.stop(audioContext.currentTime + duration)
 
-      setTimeout(() => resolve(), duration * 1000)
+      // Ses çıkana kadar küçük bir ek gecikme
+      setTimeout(() => resolve(), duration * 1000 + 10)
     })
   }
 
@@ -202,16 +206,26 @@ export default function MorseCodeConverter() {
     isStoppedRef.current = false
 
     try {
-      // 300ms başlangıç gecikmesi
-      await delay(300)
-      
+      // AudioContext'i başlat
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
       
-      // AudioContext'in tam olarak hazır olması için ek bir küçük gecikme
+      // AudioContext'in tam olarak hazır olması için bekle
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume()
       }
-      await delay(100)
+      
+      // AudioContext'i ısıtmak için sessiz bir ton çıkar (0 ses seviyesi)
+      const warmupOscillator = audioContextRef.current.createOscillator()
+      const warmupGain = audioContextRef.current.createGain()
+      warmupOscillator.connect(warmupGain)
+      warmupGain.connect(audioContextRef.current.destination)
+      warmupGain.gain.setValueAtTime(0, audioContextRef.current.currentTime)
+      warmupOscillator.frequency.setValueAtTime(settings.frequency, audioContextRef.current.currentTime)
+      warmupOscillator.start(audioContextRef.current.currentTime)
+      warmupOscillator.stop(audioContextRef.current.currentTime + 0.001)
+      
+      // Kullanıcının hazırlanması ve sistem stabilizasyonu için gecikme
+      await delay(600)
 
       const textArray = textToPlay.toUpperCase().split("")
 
@@ -227,16 +241,20 @@ export default function MorseCodeConverter() {
             if (isStoppedRef.current) break
 
             if (symbol === ".") {
-              await createTone(settings.frequency, 0.1 / settings.speed, audioContextRef.current)
-              await delay(50 / settings.speed)
+              // Dot: standart süre
+              await createTone(settings.frequency, 0.08 / settings.speed, audioContextRef.current)
+              await delay(80 / settings.speed) // Sembol arası gecikme
             } else if (symbol === "-") {
-              await createTone(settings.frequency, 0.3 / settings.speed, audioContextRef.current)
-              await delay(50 / settings.speed)
+              // Dash: dot'un 3 katı süre
+              await createTone(settings.frequency, 0.24 / settings.speed, audioContextRef.current)
+              await delay(80 / settings.speed) // Sembol arası gecikme
             }
           }
-          await delay(150 / settings.speed)
+          // Harf arası gecikme (3 unit = 240ms base)
+          await delay(240 / settings.speed)
         } else if (char === " ") {
-          await delay(350 / settings.speed)
+          // Kelime arası gecikme (7 unit = 560ms base)
+          await delay(560 / settings.speed)
         }
       }
 
@@ -306,18 +324,14 @@ export default function MorseCodeConverter() {
             className="space-y-3"
             variants={itemVariants}
           >
-            <motion.div variants={itemVariants}>
-              <Label htmlFor="input-text" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                {isTextToMorse ? "Metin" : "Mors Kodu"}
-              </Label>
-            </motion.div>
+
             <motion.div 
               className="relative"
               variants={itemVariants}
             >
               <Textarea
                 id="input-text"
-                placeholder={isTextToMorse ? "Örneğin: merhaba dünya" : "Örneğin: -- . .-. .... .- -... .- / -.. ..- -. -.-- .-"}
+                placeholder={isTextToMorse ? "Metninizi buraya yazın... (Örnek: SOS, HELLO WORLD, Merhaba Türkiye)" : "Mors kodunu buraya yazın... (Örnek: ... --- ... veya .... . .-.. .-.. --- / .-- --- .-. .-.. -..)"}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 className="min-h-[120px] text-base resize-none bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-ring pr-12 transition-all duration-300"
@@ -391,7 +405,7 @@ export default function MorseCodeConverter() {
                 onClick={toggleConversionMode}
                 variant="outline"
                 size="sm"
-                className="bg-background border-border text-foreground hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all duration-300"
+                className="bg-background/95 backdrop-blur-sm border-border text-foreground hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all duration-300 shadow-sm"
               >
                 <span className="flex items-center">
                   <span>
@@ -416,11 +430,7 @@ export default function MorseCodeConverter() {
             className="space-y-3"
             variants={itemVariants}
           >
-            <motion.div variants={itemVariants}>
-              <Label htmlFor="output-text" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                {isTextToMorse ? "Mors Kodu" : "Metin"}
-              </Label>
-            </motion.div>
+
             <motion.div 
               className="relative"
               variants={itemVariants}
@@ -431,7 +441,7 @@ export default function MorseCodeConverter() {
               >
                 <Textarea
                   id="output-text"
-                  placeholder={isTextToMorse ? "Mors kodu çıktısı buraya gelecek..." : "Çevrilmiş metin buraya gelecek..."}
+                  placeholder={isTextToMorse ? "Mors kodu çıktısı burada görünecek... (Ses çalmak için oynat butonuna basın)" : "Çevrilmiş metin burada görünecek... (Kopyalamak için kopyala butonuna basın)"}
                   value={outputText}
                   readOnly
                   className="min-h-[120px] text-base resize-none bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-ring pr-12 transition-all duration-300"
