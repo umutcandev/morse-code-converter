@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useAudio } from "@/contexts/AudioContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Play, Pause, Copy, Check, ArrowUpDown, Send } from "lucide-react"
+import { Header } from "@/components/header"
 
 const morseCodeMap: { [key: string]: string } = {
   A: ".-",
@@ -105,6 +107,7 @@ const highlightVariants = {
 }
 
 export default function MorseCodeConverter() {
+  const { settings } = useAudio()
   const [inputText, setInputText] = useState("")
   const [outputText, setOutputText] = useState("")
   const [isTextToMorse, setIsTextToMorse] = useState(true)
@@ -165,7 +168,7 @@ export default function MorseCodeConverter() {
       oscillator.connect(gainNode)
       gainNode.connect(audioContext.destination)
 
-      oscillator.frequency.setValueAtTime(600, audioContext.currentTime)
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime)
       oscillator.type = "sine"
 
       gainNode.gain.setValueAtTime(0, audioContext.currentTime)
@@ -224,16 +227,16 @@ export default function MorseCodeConverter() {
             if (isStoppedRef.current) break
 
             if (symbol === ".") {
-              await createTone(900, 0.1, audioContextRef.current)
-              await delay(50)
+              await createTone(settings.frequency, 0.1 / settings.speed, audioContextRef.current)
+              await delay(50 / settings.speed)
             } else if (symbol === "-") {
-              await createTone(900, 0.3, audioContextRef.current)
-              await delay(50)
+              await createTone(settings.frequency, 0.3 / settings.speed, audioContextRef.current)
+              await delay(50 / settings.speed)
             }
           }
-          await delay(150)
+          await delay(150 / settings.speed)
         } else if (char === " ") {
-          await delay(350)
+          await delay(350 / settings.speed)
         }
       }
 
@@ -274,7 +277,8 @@ export default function MorseCodeConverter() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
       <motion.div 
         className="container mx-auto max-w-2xl px-4 py-8"
         variants={containerVariants}
@@ -285,14 +289,8 @@ export default function MorseCodeConverter() {
           className="text-left space-y-1 mb-8"
           variants={itemVariants}
         >
-          <motion.h1 
-            className="text-3xl font-bold tracking-tight text-white"
-            variants={itemVariants}
-          >
-            Mors Kodu Çevirici
-          </motion.h1>
           <motion.p 
-            className="text-zinc-400 text-base"
+            className="text-muted-foreground text-base"
             variants={itemVariants}
           >
             Metin ve Mors kodu arasında hızlı çeviri yapın. Sesli oynatma ile Mors kodunu öğrenin.
@@ -309,7 +307,7 @@ export default function MorseCodeConverter() {
             variants={itemVariants}
           >
             <motion.div variants={itemVariants}>
-              <Label htmlFor="input-text" className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
+              <Label htmlFor="input-text" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 {isTextToMorse ? "Metin" : "Mors Kodu"}
               </Label>
             </motion.div>
@@ -322,7 +320,7 @@ export default function MorseCodeConverter() {
                 placeholder={isTextToMorse ? "Örneğin: merhaba dünya" : "Örneğin: -- . .-. .... .- -... .- / -.. ..- -. -.-- .-"}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="min-h-[120px] text-base resize-none bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-600 pr-12 transition-all duration-300 focus:shadow-lg focus:shadow-zinc-800/20"
+                className="min-h-[120px] text-base resize-none bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-ring pr-12 transition-all duration-300"
               />
 
               <motion.div
@@ -349,13 +347,13 @@ export default function MorseCodeConverter() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="border border-zinc-700 rounded-lg p-3 bg-zinc-800 text-base leading-relaxed"
+                  className="border border-border rounded-lg p-3 bg-card text-base leading-relaxed"
                 >
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.1 }}
-                    className="text-xs text-zinc-400 mb-2 uppercase tracking-wide"
+                    className="text-xs text-muted-foreground mb-2 uppercase tracking-wide"
                   >
                     Oynatılıyor:
                   </motion.div>
@@ -368,7 +366,7 @@ export default function MorseCodeConverter() {
                         animate={highlightedIndex === index ? "highlighted" : "initial"}
                         transition={{ duration: 0.3, ease: "easeOut" }}
                         className={`inline-block px-0.5 rounded ${
-                          highlightedIndex === index ? "" : "text-zinc-300"
+                          highlightedIndex === index ? "" : "text-muted-foreground"
                         }`}
                       >
                         {char}
@@ -386,14 +384,14 @@ export default function MorseCodeConverter() {
             variants={itemVariants}
           >
             <div className="w-full">
-              <Separator className="bg-zinc-800" />
+              <Separator className="bg-border" />
             </div>
             <div className="absolute">
               <Button
                 onClick={toggleConversionMode}
                 variant="outline"
                 size="sm"
-                className="bg-zinc-950 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white px-4 py-2 transition-all duration-300"
+                className="bg-background border-border text-foreground hover:bg-accent hover:text-accent-foreground px-4 py-2 transition-all duration-300"
               >
                 <span className="flex items-center">
                   <span>
@@ -419,7 +417,7 @@ export default function MorseCodeConverter() {
             variants={itemVariants}
           >
             <motion.div variants={itemVariants}>
-              <Label htmlFor="output-text" className="text-sm font-medium text-zinc-400 uppercase tracking-wide">
+              <Label htmlFor="output-text" className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 {isTextToMorse ? "Mors Kodu" : "Metin"}
               </Label>
             </motion.div>
@@ -436,7 +434,7 @@ export default function MorseCodeConverter() {
                   placeholder={isTextToMorse ? "Mors kodu çıktısı buraya gelecek..." : "Çevrilmiş metin buraya gelecek..."}
                   value={outputText}
                   readOnly
-                  className="min-h-[120px] text-base resize-none bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus:border-zinc-600 pr-12 transition-all duration-300"
+                  className="min-h-[120px] text-base resize-none bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-ring pr-12 transition-all duration-300"
                 />
               </motion.div>
               <div className="absolute top-3 right-3 flex space-x-2">
@@ -450,8 +448,8 @@ export default function MorseCodeConverter() {
                     size="sm"
                     className={`h-8 w-8 rounded-full p-0 flex-shrink-0 transition-all duration-200 ${
                       isPlaying
-                        ? "bg-zinc-700 hover:bg-zinc-600 text-white"
-                        : "bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700"
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "bg-secondary hover:bg-secondary/90 text-secondary-foreground border border-border"
                     } ${!outputText.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <motion.div
@@ -482,7 +480,7 @@ export default function MorseCodeConverter() {
                           onClick={copyToClipboard}
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 rounded-full p-0 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-all duration-200"
+                          className="h-8 w-8 rounded-full p-0 text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
                         >
                           <motion.div
                             animate={isCopied ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}
